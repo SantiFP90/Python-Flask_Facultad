@@ -66,7 +66,7 @@ import time
 
 
 # desde aqui se llama la aplicacion al inicio
-#app = Flask(__name__)
+app = Flask(__name__)
 
 app = Flask(__name__, static_folder='static')
 login_manager = LoginManager(app)
@@ -148,7 +148,7 @@ ma = Marshmallow(app)
 
 @app.route("/")
 def entrada():  
-    # crea_tablas_DB()
+    crea_tablas_DB()
     return redirect("index")
 
 @login_manager.user_loader
