@@ -113,7 +113,7 @@ app.register_blueprint(fichas)
 @app.route("/")
 def entrada():  
     with app.app_context(): 
-        print("Realizar la conx con XAMPP")
+        print("Levatar img en docker")
         crea_tablas_DB()
     return redirect("index")
 
