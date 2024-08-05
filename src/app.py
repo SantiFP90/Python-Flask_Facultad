@@ -112,7 +112,8 @@ app.register_blueprint(fichas)
 
 @app.route("/")
 def entrada():  
-    with app.app_context():  # Ensure the app context is available
+    with app.app_context(): 
+        print("Realizar la conx con XAMPP")
         crea_tablas_DB()
     return redirect("index")
 
