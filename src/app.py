@@ -113,7 +113,7 @@ app.register_blueprint(fichas)
 @app.route("/")
 def entrada():  
     with app.app_context(): 
-        print("Levatar img en docker")
+        print("Levatar img en docker2")
         crea_tablas_DB()
     return redirect("index")
 
