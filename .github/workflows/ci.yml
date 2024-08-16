@@ -35,15 +35,17 @@ jobs:
 
       - name: Run tests
         run: |
-          # Aquí agregarías los comandos para ejecutar tus pruebas
           # Ejemplo: pytest tests/
 
       - name: Build Docker image
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/testing_2024_quality:${{ github.sha }} .
+        #CONSTRUIMOS UNA IMAGEN EN DOCKER
 
       - name: Log in to DockerHub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        #LOGUEAMOS EN DOCKER
 
       - name: Push Docker image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/testing_2024_quality:${{ github.sha }}
+        #PUSHEAMOS LA IMAGEN
