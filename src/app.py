@@ -1,14 +1,16 @@
-from flask import Flask, redirect
-from flask_jwt_extended import JWTManager
+from flask import (Flask, Blueprint, render_template, request, redirect, url_for, flash, jsonify)
+from flask_jwt_extended import (JWTManager, jwt_required, create_access_token, get_jwt_identity)
 from flask_sqlalchemy import SQLAlchemy
+import requests
+import json
+from utils.db import db 
 from flask_marshmallow import Marshmallow
-from flask_cors import CORS
-from flask_dance.contrib.google import make_google_blueprint
-import schedule
-import time
-
 from config import DATABASE_CONNECTION_URI
 from models.creaTablas import crea_tablas_DB
+from strategies.estrategias import estrategias
+from strategies.datoSheet import datoSheet
+from strategies.Experimental.FuncionesBasicas01 import FuncionesBasicas01
+from tokens.token import token
 from routes.instrumentos import instrumentos
 from routes.instrumentosGet import instrumentosGet
 from routes.api_externa_conexion.get_login import get_login
@@ -37,49 +39,31 @@ from models.operacion import operacion
 from models.operacionHF import operacionHF
 from models.logs import logs
 from models.creaTablas import creaTabla
-
 from flask_login import LoginManager
-from strategies.estrategias import estrategias
-from tokens.token import token
-from strategies.datoSheet import datoSheet
-from strategies.Experimental.FuncionesBasicas01 import FuncionesBasicas01
-
-# Initialize Flask app
-app = Flask(__name__)
+from flask_cors import CORS
+from flask_dance.contrib.google import make_google_blueprint, google
+import schedule
+import time
 
 app = Flask(__name__, static_folder='static')
 login_manager = LoginManager(app)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_CONNECTION_URI
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# Configura el manejo de autenticación JWT
 app.config['JWT_SECRET_KEY'] = '621289'
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
 app.config['JWT_ACCESS_COOKIE_PATH'] = '/api/'
 app.config['JWT_REFRESH_COOKIE_PATH'] = '/refresh/'
 app.config['JWT_COOKIE_CSRF_PROTECT'] = True
-
-# Create the SQLAlchemy instance
-db = SQLAlchemy()
-db.init_app(app)  # Bind SQLAlchemy to the app
-
-# Initialize Marshmallow
-ma = Marshmallow(app)
-
-# Initialize JWT
 jwt = JWTManager(app)
 
-# Initialize CORS
-CORS(app)
-
-# Configure the Google OAuth blueprint
-blueprint = make_google_blueprint(
-    client_id='client_id',
-    client_secret='client_secret',
-    scope=['profile', 'email']
-)
+# Configura el blueprint de Google OAuth
+blueprint = make_google_blueprint(client_id='client_id',
+                                   client_secret='client_secret',
+                                   scope=['profile', 'email'])
 app.register_blueprint(blueprint, url_prefix='/login')
 
-# Register blueprints
+# Registrar blueprints
 app.register_blueprint(logs)
 app.register_blueprint(creaTabla)
 app.register_blueprint(token)
@@ -110,11 +94,55 @@ app.register_blueprint(ficha)
 app.register_blueprint(trazaFicha)
 app.register_blueprint(fichas)
 
+app.secret_key = '*0984632'
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_CONNECTION_URI
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+
+# Inicializa SQLAlchemy y Marshmallow
+db.init_app(app)
+ma = Marshmallow(app)
+
+
+# Configuración de MantisBT API
+MANTISBT_URL = 'http://localhost/mantisbt/api/rest/issues/'
+MANTISBT_API_TOKEN = 'G2foOdwp3HxE20uoRwNWJ-S6A1TP9IP7'
+MANTISBT_HEADERS = {
+    'Authorization': 'Bearer ' + MANTISBT_API_TOKEN,
+    'Content-Type': 'application/json'
+}
+
+@app.route('/report_issue', methods=['POST'])
+def report_issue():
+    print("Debajo los headers")
+    print("Headers:", request.headers)
+    print("JSON:", request.json)
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "No data received"}), 400
+    issue_data = {
+        "summary": data['Issue post'],
+        "description": data['description'],  
+        "project": {"id": data['project_id']},
+        "category": data['configuracion']
+    }
+    response = requests.post(
+        MANTISBT_URL,
+        headers=MANTISBT_HEADERS,
+        data=json.dumps(issue_data)
+    )
+    if response.status_code == 201:
+        return jsonify({"message": "Issue creado exitosamente en MantisBT"}), 201
+    else:
+        return jsonify({"message": "Error al crear el issue", "status_code": response.status_code}), response.status_code
+
+
+
+
 @app.route("/")
 def entrada():  
-    with app.app_context(): 
-        print("Levatar img en docker2")
-        crea_tablas_DB()
+    crea_tablas_DB()
     return redirect("index")
 
 @login_manager.user_loader
@@ -123,6 +151,7 @@ def load_user(user_id):
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=True)
+    # Ciclo para ejecutar las tareas programadas
     while True:
         schedule.run_pending()
         time.sleep(1)

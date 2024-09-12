@@ -16,6 +16,7 @@
         {% endwith %}
         <div class="horizontal-padding vertical-padding">
           <section class="planes mt-4" id="planes">
+            <button onclick="mantisBT()" >MantisBT</button>
             <div class="planes-info d-flex align-items-center justify-content-center flex-column text-center">
               <h4 class="planes-titulo" style="color:gold; font-size: 24px;">OFERTAS DE INVERSION</h4> 
               <h1 class="planes-descripcion" style="color:white; font-size: 32px;">Invierte En Nuestras Estrategias <br> HOY!</h1>
@@ -305,6 +306,29 @@
   
   <!-- Aquí se agrega el script -->  
   <script>
+
+    function mantisBT() {
+        $.ajax({
+            type: "POST",
+            url: "http://127.0.0.1:5000/report_issue",
+            contentType: "application/json", 
+            xhrFields: {
+              withCredentials: true
+            },
+            data: JSON.stringify({
+                "Issue post": "Ejemplo de Issue",
+                "description": "Vamos que en esta la integración",
+                "project_id": 2,
+                "configuracion": "General"
+            }), 
+            success: function(response) {
+                console.log('Respuesta:', response);
+            },
+            error: function(error) {
+                console.log('Error:', error);
+            }
+        });
+    }
    
     function showError(message) {
       // muestra un mensaje de error al usuario
