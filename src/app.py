@@ -105,7 +105,7 @@ db.init_app(app)
 ma = Marshmallow(app)
 
 
-# Configuración de MantisBT API
+##Subida al repo
 MANTISBT_URL = 'http://localhost/mantisbt/api/rest/issues/'
 MANTISBT_API_TOKEN = 'G2foOdwp3HxE20uoRwNWJ-S6A1TP9IP7'
 MANTISBT_HEADERS = {
